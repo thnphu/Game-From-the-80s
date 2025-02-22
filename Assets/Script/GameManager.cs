@@ -1,49 +1,52 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    private int totalSoldiers;
-    private int rescuedSoldiers = 0;
+    public int totalSoldiers = 5; // Set this in the Inspector
+    public GameObject soldierPrefab; // Assign the Soldier prefab in the Inspector
+    public Transform spawnArea; // Assign an empty GameObject defining the spawn area
 
-    public Text soldiersInHelicopterText;
-    public Text soldiersRescuedText;
+    private int rescuedSoldiers = 0;
 
     void Start()
     {
-        GameObject[] soldiers = GameObject.FindGameObjectsWithTag("Soldier");
-        totalSoldiers = soldiers.Length; // Count total soldiers in the game
+        SpawnSoldiers();
     }
 
-    // This method is called when a soldier is picked up
-    public void SoldierRescued()
+    void SpawnSoldiers()
     {
-        rescuedSoldiers++;
-        UpdateUI();
+        for (int i = 0; i < totalSoldiers; i++)
+        {
+            Vector2 randomPosition = new Vector2(
+                Random.Range(spawnArea.position.x - spawnArea.localScale.x / 2, spawnArea.position.x + spawnArea.localScale.x / 2),
+                Random.Range(spawnArea.position.y - spawnArea.localScale.y / 2, spawnArea.position.y + spawnArea.localScale.y / 2)
+            );
+
+            Instantiate(soldierPrefab, randomPosition, Quaternion.identity);
+        }
     }
 
-    // Get the total number of soldiers
-    public int GetTotalSoldiers()
+    public void SoldierRescued(int rescuedSoldiersCount)
     {
-        return totalSoldiers;
+        rescuedSoldiers += rescuedSoldiersCount;
+        CheckWinCondition();
     }
 
-    // Get the number of rescued soldiers
+    void CheckWinCondition()
+    {
+        if (rescuedSoldiers >= totalSoldiers)
+        {
+            Debug.Log("You Win!");
+        }
+    }
+
     public int GetRescuedSoldiers()
     {
         return rescuedSoldiers;
     }
 
-    // Update the UI
-    private void UpdateUI()
+    public int GetTotalSoldiers()
     {
-        soldiersInHelicopterText.text = "Soldiers in Helicopter: " + (totalSoldiers - rescuedSoldiers);
-        soldiersRescuedText.text = "Soldiers Rescued: " + rescuedSoldiers;
-
-        if (rescuedSoldiers >= totalSoldiers)
-        {
-            Debug.Log("You Win!");
-        }
+        return totalSoldiers;
     }
 }

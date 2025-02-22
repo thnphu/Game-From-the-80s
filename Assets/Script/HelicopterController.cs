@@ -18,14 +18,12 @@ public class HelicopterController : MonoBehaviour
     public AudioClip pickupSound;
     private AudioSource audioSource;
 
-    private GameManager gameManager;
+    // Reference to the GameManager to update game state
+    public GameManager gameManager;
 
     void Start()
     {
-        // Initialize references
         audioSource = GetComponent<AudioSource>();
-        gameManager = FindObjectOfType<GameManager>(); // Get reference to the GameManager
-        
         UpdateUI();
         winText.gameObject.SetActive(false);
         gameOverText.gameObject.SetActive(false);
@@ -33,10 +31,9 @@ public class HelicopterController : MonoBehaviour
 
     void Update()
     {
-        // Do nothing if the game is over or won
         if (gameOverText.gameObject.activeSelf || winText.gameObject.activeSelf)
         {
-            return;
+            return; // Stop movement when the game is over or won
         }
 
         // Helicopter movement using arrow keys
@@ -44,7 +41,6 @@ public class HelicopterController : MonoBehaviour
         float moveY = Input.GetAxis("Vertical") * speed * Time.deltaTime;
         transform.Translate(new Vector3(moveX, moveY, 0));
 
-        // Restart the game if 'R' is pressed
         if (Input.GetKeyDown(KeyCode.R))
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().name); // Reset the scene
@@ -57,44 +53,41 @@ public class HelicopterController : MonoBehaviour
         if (other.CompareTag("Soldier") && currentSoldiers < maxCapacity)
         {
             Destroy(other.gameObject); // Remove soldier from the scene
-            currentSoldiers++; // Increment soldiers in the helicopter
-            audioSource.PlayOneShot(pickupSound); // Play sound when picking up soldier
-            gameManager.SoldierRescued(); // Update rescued soldiers in GameManager
-            UpdateUI(); // Update the UI
+            currentSoldiers++;
+            audioSource.PlayOneShot(pickupSound); // Play pickup sound
+            UpdateUI();
         }
-        // Empty helicopter at hospital
+        // Drop soldiers at hospital
         else if (other.CompareTag("Hospital"))
         {
             int rescuedSoldiers = currentSoldiers;
             currentSoldiers = 0; // Empty the helicopter
-            UpdateUI(); // Update UI after emptying
-            Debug.Log("Soldiers taken to hospital: " + rescuedSoldiers);
+            gameManager.SoldierRescued(rescuedSoldiers); // Inform GameManager
+            UpdateUI();
         }
-        // Check if hitting a tree (Game Over)
+        // Game Over when hitting a tree
         else if (other.CompareTag("Tree"))
         {
-            Debug.Log("Game Over! Restarting...");
-            gameOverText.gameObject.SetActive(true); // Show "Game Over"
-            Invoke("ResetGame", 2f); // Wait a moment before resetting the game
+            Debug.Log("Game Over!");
+            gameOverText.gameObject.SetActive(true);
+            Invoke("ResetGame", 2f); // Restart game after 2 seconds
         }
     }
 
     private void UpdateUI()
     {
-        // Update soldiers in helicopter and rescued soldiers
         soldiersInHelicopterText.text = "Soldiers in Helicopter: " + currentSoldiers;
         soldiersRescuedText.text = "Soldiers Rescued: " + gameManager.GetRescuedSoldiers();
 
-        // Show Win Text if all soldiers are rescued
-        if (gameManager.GetRescuedSoldiers() == gameManager.GetTotalSoldiers())
+        if (gameManager.GetRescuedSoldiers() >= gameManager.GetTotalSoldiers())
         {
-            winText.gameObject.SetActive(true); // Show "You Win"
+            winText.gameObject.SetActive(true); // Show "You Win" text
+            Invoke("ResetGame", 2f); // Restart game after 2 seconds
         }
     }
 
     private void ResetGame()
     {
-        // Reset the scene
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
