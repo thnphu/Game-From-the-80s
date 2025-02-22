@@ -18,25 +18,14 @@ public class HelicopterController : MonoBehaviour
     public AudioClip pickupSound;
     private AudioSource audioSource;
 
-    // Reference to GameManager
-    public GameManager gameManager;
+    private GameManager gameManager;
 
     void Start()
     {
+        // Initialize references
         audioSource = GetComponent<AudioSource>();
-
-        // Check if gameManager reference is assigned
-        if (gameManager == null)
-        {
-            Debug.LogError("GameManager is not assigned in HelicopterController!");
-        }
-
-        // Check if UI elements are assigned
-        if (soldiersInHelicopterText == null || soldiersRescuedText == null || gameOverText == null || winText == null)
-        {
-            Debug.LogError("UI elements are not assigned in HelicopterController!");
-        }
-
+        gameManager = FindObjectOfType<GameManager>(); // Get reference to the GameManager
+        
         UpdateUI();
         winText.gameObject.SetActive(false);
         gameOverText.gameObject.SetActive(false);
@@ -44,9 +33,10 @@ public class HelicopterController : MonoBehaviour
 
     void Update()
     {
+        // Do nothing if the game is over or won
         if (gameOverText.gameObject.activeSelf || winText.gameObject.activeSelf)
         {
-            return; // Do nothing if the game is over or won
+            return;
         }
 
         // Helicopter movement using arrow keys
@@ -54,6 +44,7 @@ public class HelicopterController : MonoBehaviour
         float moveY = Input.GetAxis("Vertical") * speed * Time.deltaTime;
         transform.Translate(new Vector3(moveX, moveY, 0));
 
+        // Restart the game if 'R' is pressed
         if (Input.GetKeyDown(KeyCode.R))
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().name); // Reset the scene
@@ -66,22 +57,17 @@ public class HelicopterController : MonoBehaviour
         if (other.CompareTag("Soldier") && currentSoldiers < maxCapacity)
         {
             Destroy(other.gameObject); // Remove soldier from the scene
-            currentSoldiers++;
+            currentSoldiers++; // Increment soldiers in the helicopter
             audioSource.PlayOneShot(pickupSound); // Play sound when picking up soldier
-
-            if (gameManager != null) // Only call SoldierRescued if gameManager is assigned
-            {
-                gameManager.SoldierRescued(); // Call SoldierRescued from GameManager to update rescued count
-            }
-
-            UpdateUI();
+            gameManager.SoldierRescued(); // Update rescued soldiers in GameManager
+            UpdateUI(); // Update the UI
         }
         // Empty helicopter at hospital
         else if (other.CompareTag("Hospital"))
         {
             int rescuedSoldiers = currentSoldiers;
             currentSoldiers = 0; // Empty the helicopter
-            UpdateUI();
+            UpdateUI(); // Update UI after emptying
             Debug.Log("Soldiers taken to hospital: " + rescuedSoldiers);
         }
         // Check if hitting a tree (Game Over)
@@ -95,23 +81,14 @@ public class HelicopterController : MonoBehaviour
 
     private void UpdateUI()
     {
-        // Check if gameManager is assigned before updating UI
-        if (gameManager != null)
+        // Update soldiers in helicopter and rescued soldiers
+        soldiersInHelicopterText.text = "Soldiers in Helicopter: " + currentSoldiers;
+        soldiersRescuedText.text = "Soldiers Rescued: " + gameManager.GetRescuedSoldiers();
+
+        // Show Win Text if all soldiers are rescued
+        if (gameManager.GetRescuedSoldiers() == gameManager.GetTotalSoldiers())
         {
-            if (soldiersInHelicopterText != null)
-            {
-                soldiersInHelicopterText.text = "Soldiers in Helicopter: " + currentSoldiers;
-            }
-
-            if (soldiersRescuedText != null)
-            {
-                soldiersRescuedText.text = "Soldiers Rescued: " + gameManager.RescuedSoldiers;
-            }
-
-            if (gameManager.RescuedSoldiers >= gameManager.TotalSoldiers)
-            {
-                winText.gameObject.SetActive(true); // Show "You Win"
-            }
+            winText.gameObject.SetActive(true); // Show "You Win"
         }
     }
 
