@@ -5,25 +5,25 @@ using UnityEngine.UI;
 public class HelicopterController : MonoBehaviour
 {
     public float speed = 5f;
+    public float boostSpeed = 8f; // Faster speed when holding Shift
     public int maxCapacity = 3;
     private int currentSoldiers = 0;
 
-    // UI Elements
     public Text soldiersInHelicopterText;
     public Text soldiersRescuedText;
     public Text gameOverText;
     public Text winText;
 
-    // Sound effect
     public AudioClip pickupSound;
     private AudioSource audioSource;
 
-    // Reference to the GameManager to update game state
-    public GameManager gameManager;
+    private GameManager gameManager;
 
     void Start()
     {
         audioSource = GetComponent<AudioSource>();
+        gameManager = FindObjectOfType<GameManager>(); // Find GameManager in the scene
+
         UpdateUI();
         winText.gameObject.SetActive(false);
         gameOverText.gameObject.SetActive(false);
@@ -33,17 +33,20 @@ public class HelicopterController : MonoBehaviour
     {
         if (gameOverText.gameObject.activeSelf || winText.gameObject.activeSelf)
         {
-            return; // Stop movement when the game is over or won
+            return; // Stop movement if the game is over or won
         }
 
-        // Helicopter movement using arrow keys
-        float moveX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
-        float moveY = Input.GetAxis("Vertical") * speed * Time.deltaTime;
+        // 🚁 **Helicopter Movement with Shift Boost**
+        float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? boostSpeed : speed;
+
+        float moveX = Input.GetAxis("Horizontal") * currentSpeed * Time.deltaTime;
+        float moveY = Input.GetAxis("Vertical") * currentSpeed * Time.deltaTime;
         transform.Translate(new Vector3(moveX, moveY, 0));
 
+        // Reset game when 'R' key is pressed
         if (Input.GetKeyDown(KeyCode.R))
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name); // Reset the scene
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }
 
@@ -53,24 +56,23 @@ public class HelicopterController : MonoBehaviour
         if (other.CompareTag("Soldier") && currentSoldiers < maxCapacity)
         {
             Destroy(other.gameObject); // Remove soldier from the scene
-            currentSoldiers++;
-            audioSource.PlayOneShot(pickupSound); // Play pickup sound
+            currentSoldiers++; // Increase the count
+            audioSource.PlayOneShot(pickupSound); // Play sound
             UpdateUI();
         }
-        // Drop soldiers at hospital
-        else if (other.CompareTag("Hospital"))
+        // Drop off soldiers at the hospital
+        else if (other.CompareTag("Hospital") && currentSoldiers > 0)
         {
-            int rescuedSoldiers = currentSoldiers;
+            gameManager.SoldierRescued(currentSoldiers); // Notify GameManager
             currentSoldiers = 0; // Empty the helicopter
-            gameManager.SoldierRescued(rescuedSoldiers); // Inform GameManager
             UpdateUI();
         }
-        // Game Over when hitting a tree
+        // Hit a tree (Game Over)
         else if (other.CompareTag("Tree"))
         {
             Debug.Log("Game Over!");
             gameOverText.gameObject.SetActive(true);
-            Invoke("ResetGame", 2f); // Restart game after 2 seconds
+            Invoke("ResetGame", 2f);
         }
     }
 
@@ -78,12 +80,6 @@ public class HelicopterController : MonoBehaviour
     {
         soldiersInHelicopterText.text = "Soldiers in Helicopter: " + currentSoldiers;
         soldiersRescuedText.text = "Soldiers Rescued: " + gameManager.GetRescuedSoldiers();
-
-        if (gameManager.GetRescuedSoldiers() >= gameManager.GetTotalSoldiers())
-        {
-            winText.gameObject.SetActive(true); // Show "You Win" text
-            Invoke("ResetGame", 2f); // Restart game after 2 seconds
-        }
     }
 
     private void ResetGame()
