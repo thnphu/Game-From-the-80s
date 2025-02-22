@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    public int totalSoldiers = 5; // Set this in the Inspector
-    public GameObject soldierPrefab; // Assign the Soldier prefab in the Inspector
-    public Transform spawnArea; // Assign an empty GameObject defining the spawn area
+    public int totalSoldiers; 
+    public GameObject soldierPrefab; 
+    public Transform spawnArea; 
 
     private int rescuedSoldiers = 0;
 
