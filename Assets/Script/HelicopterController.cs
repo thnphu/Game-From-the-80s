@@ -11,6 +11,7 @@ public class HelicopterController : MonoBehaviour
 
     public Text soldiersInHelicopterText;
     public Text soldiersRescuedText;
+    public Text totalSoldiersText;
     public Text gameOverText;
     public Text winText;
 
@@ -50,7 +51,7 @@ public class HelicopterController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        
+        // Picking up soldiers
         if (other.CompareTag("Soldier") && currentSoldiers < maxCapacity)
         {
             Destroy(other.gameObject); 
@@ -58,14 +59,20 @@ public class HelicopterController : MonoBehaviour
             audioSource.PlayOneShot(pickupSound); 
             UpdateUI();
         }
-        
+        // Dropping off soldiers at hospital
         else if (other.CompareTag("Hospital") && currentSoldiers > 0)
         {
             gameManager.SoldierRescued(currentSoldiers);
             currentSoldiers = 0;
             UpdateUI();
+
+            // Check if all soldiers are rescued
+            if (gameManager.GetRescuedSoldiers() >= gameManager.GetTotalSoldiers())
+            {
+                WinGame();
+            }
         }
-        
+        // Hitting a tree (Game Over)
         else if (other.CompareTag("Tree"))
         {
             Debug.Log("Game Over!");
@@ -78,6 +85,14 @@ public class HelicopterController : MonoBehaviour
     {
         soldiersInHelicopterText.text = "Soldiers in Helicopter: " + currentSoldiers;
         soldiersRescuedText.text = "Soldiers Rescued: " + gameManager.GetRescuedSoldiers();
+        totalSoldiersText.text = "Total Soldiers: " + gameManager.GetTotalSoldiers();
+    }
+
+    private void WinGame()
+    {
+        winText.gameObject.SetActive(true);
+        Debug.Log("You Win!");
+        Invoke("ResetGame", 3f);
     }
 
     private void ResetGame()
